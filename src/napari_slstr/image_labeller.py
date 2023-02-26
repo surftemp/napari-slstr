@@ -3,6 +3,8 @@ import xarray as xr
 import numpy as np
 import os.path
 
+OBLIQUE_OFFSET_RADIANCE = 1096 # trackOffset/nadir=1996 - trackOffset/oblique=900
+OBLIQUE_OFFSET_BT = 448        # trackOffset/nadir=998 - trackOffset/oblique=450
 
 label_layers = {
     "Cloud": ( "cloud_labels.nc","white"),
@@ -15,26 +17,45 @@ class SceneLabeler:
     def __init__(self, scene_path):
         self.scene_path = scene_path
         self.viewer = napari.Viewer()
-        self.data_dims = None
-        self.data_shape = None
+        self.data_dims = ("rows","columns")
+        self.data_shape = (1200,1500)
 
         self.masks = {} # populated on open
 
     def coarsen(self,da):
         return da.coarsen(rows=2,columns=2).mean()
 
-    def add_image_layer(self,channel,name='',cmap="viridis",coarsen=False):
+    def add_image_layer(self,channel,name='',cmap="viridis"):
+        coarsen = False
+        pad = False
+        if "radiance" in channel:
+            coarsen = True
+        if channel.endswith("o"):
+            pad = True
+
+        if not name:
+            name = channel
         ds = xr.open_dataset(os.path.join(self.scene_path,channel + ".nc"))
         da = ds[channel].squeeze()
+        if pad:
+            if coarsen:
+                data = np.zeros(shape=(2400, 3000))
+                data[:, :] = np.nan
+                data[:,OBLIQUE_OFFSET_RADIANCE:OBLIQUE_OFFSET_RADIANCE+1800] = da.data
+                da = xr.DataArray(data,dims=("rows","columns"))
+            else:
+                data = np.zeros(shape=(1200,1500))
+                data[:, :] = np.nan
+                data[:, OBLIQUE_OFFSET_BT:OBLIQUE_OFFSET_BT + 900] = da.data
+                da = xr.DataArray(data, dims=("rows", "columns"))
+
         if coarsen:
             da = self.coarsen(da)
-        if self.data_shape is not None:
-            if da.shape != self.data_shape:
-                raise TypeError(f"Data for channel {channel} has incompatible shape")
-        else:
-            self.data_dims = da.dims
-            self.data_shape = da.shape
-        self.viewer.add_image(da.data, name=name if name else channel, colormap=cmap)
+
+        if da.data.shape != self.data_shape:
+            raise TypeError(f"Data for channel {channel} has incompatible shape: {da.data.shape} should be {self.data_shape}")
+
+        self.viewer.add_image(da.data, name=name, colormap=cmap)
 
     def add_rgb_layer(self,name,red_channel,green_channel,blue_channel,coarsen=True):
         rgb_arrays = []
@@ -53,14 +74,20 @@ class SceneLabeler:
 
     def open(self):
         self.add_image_layer("S9_BT_in", cmap="magma")
+        self.add_image_layer("S9_BT_io", cmap="magma")
         self.add_image_layer("S8_BT_in", cmap="magma")
         self.add_image_layer("S7_BT_in",cmap="magma")
-        self.add_image_layer("S6_radiance_an",coarsen=True)
-        self.add_image_layer("S5_radiance_an", coarsen=True)
-        self.add_image_layer("S4_radiance_an", coarsen=True)
-        self.add_image_layer("S3_radiance_an", coarsen=True)
-        self.add_image_layer("S2_radiance_an", coarsen=True)
-        self.add_image_layer("S1_radiance_an", coarsen=True)
+        self.add_image_layer("S6_radiance_an")
+        self.add_image_layer("S6_radiance_ao")
+        self.add_image_layer("S5_radiance_an")
+        self.add_image_layer("S5_radiance_ao")
+        self.add_image_layer("S4_radiance_an")
+        self.add_image_layer("S4_radiance_ao")
+        self.add_image_layer("S3_radiance_an")
+        self.add_image_layer("S3_radiance_ao")
+        self.add_image_layer("S2_radiance_an")
+        self.add_image_layer("S1_radiance_ao")
+        self.add_image_layer("S1_radiance_an")
         self.add_rgb_layer("S3/S2/S1 RGB", "S3_radiance_an","S2_radiance_an","S1_radiance_an")
 
         for name in label_layers:
