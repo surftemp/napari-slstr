@@ -112,7 +112,7 @@ class SceneLabeler:
             raise TypeError(
                 f"Data for channel {channel} has incompatible shape: {da.data.shape} should be {self.data_shape}")
 
-        self.viewer.add_image(np.flip(da.data,axis=0), name=name, colormap=cmap)
+        self.viewer.add_image(da.data, name=name, colormap=cmap)
 
     def add_rgb_layer(self, name, rgb_channels, rgb_variables, aggregate="mean"):
         """
@@ -145,7 +145,7 @@ class SceneLabeler:
 
         rgb_data = xr.concat(rgb_arrays, "rgb")
         rgb_data = rgb_data.transpose(*rgb_data.dims[1:] + rgb_data.dims[0:1])
-        self.viewer.add_image(np.flip(rgb_data.data,axis=0), name=name, rgb=True)
+        self.viewer.add_image(rgb_data.data, name=name, rgb=True)
 
     def open(self):
         """
@@ -191,7 +191,7 @@ class SceneLabeler:
                     else:
                         self.masks[layer_name] = xr.DataArray(data=np.zeros(dtype=int, shape=self.data_shape),
                                 dims=self.data_dims, name=layer_name, attrs={"description":"mask for label: "+layer_name})
-                    self.viewer.add_labels(np.flip(self.masks[layer_name].data,axis=0), name=layer_name + " (" + colour + ")",
+                    self.viewer.add_labels(self.masks[layer_name].data, name=layer_name + " (" + colour + ")",
                                            num_colors=1, color={1: colour})
 
                 else:
