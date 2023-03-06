@@ -56,10 +56,10 @@ git pull
 
 ### Defaults
 
-By Default all channels are shown, with nadir and oblique views, plus a false colour view constructed from bands S3 (red), S2(green) and S1(blue).
+In the `resources/example.cfg` configuration file, all channels are shown, with nadir and oblique views, plus a false colour view constructed from bands S3 (red), S2(green) and S1(blue).
 
 ```
-image_labeller <path-to-SLSTR-scene-folder> <path-to-napari-slstr-cfg>
+image_labeller <path-to-SLSTR-scene-folder> ./resources/example.cfg
 ```
 
 
