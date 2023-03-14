@@ -13,24 +13,26 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 ## Installation
 
+On Mac, ensure you have XCode installed.
+
 Set up a conda environment with python 3.9
 
 ```
-conda create -y -n napari-env -c conda-forge python=3.9
+conda create -y -n napari-env python=3.9
 conda activate napari-env
 ```
 
-Clone this repo
+Create a new folder and clone this repo into it
 
 ```
-cd /parent/directory/for/cloned/repo
+mkdir napari_slstr_install
+cd napari_slstr_install
 git clone git@github.com:surftemp/napari-slstr.git
 ```
 
 Install napari-slstr `image_labeller` command, napari and other dependencies:
 
 ```
-cd /parent/directory/for/cloned/repo/napari-slstr
 pip install -e .
 ```
 
@@ -48,7 +50,7 @@ image_labeller ~/Projects/napari/S3A_SL_1_RBT____20170122T094902_20170122T095202
 To install updates to the `image_labelling` tool:
 
 ```
-cd /parent/directory/for/cloned/repo/napari-slstr
+cd napari_slstr_install
 git pull
 ```
 
@@ -56,7 +58,7 @@ git pull
 
 ### Defaults
 
-By Default all channels are shown, with nadir and oblique views, plus a false colour view constructed from bands S3 (red), S2(green) and S1(blue).
+By Default all channels are shown, with nadir and oblique views, plus a false colour view constructed from bands S3 (red), S2 (green) and S1 (blue).
 
 ```
 image_labeller <path-to-SLSTR-scene-folder> <path-to-napari-slstr-cfg>
