@@ -19,12 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import threading
 
 import napari
 import xarray as xr
 import numpy as np
 import os.path
 import logging
+import time
 
 try:
     import tomllib
@@ -37,6 +39,19 @@ except ModuleNotFoundError:
 OBLIQUE_OFFSET_RADIANCE = 1096  # 0.5km/trackOffset/nadir=1996 - 0.5km/trackOffset/oblique=900
 OBLIQUE_OFFSET_BT = 548  # 1km/trackOffset/nadir=998 - 1km/trackOffset/oblique=450
 
+class AutoSaveThread(threading.Thread):
+
+    def __init__(self,labeller):
+        super().__init__()
+        self.labeller = labeller
+        self.interval_s = 300
+
+    def run(self):
+        print(f"Starting Autosave thread, interval={self.interval_s} seconds")
+        while not self.labeller.running_mutex.acquire(timeout=self.interval_s):
+            print("Autosaving...")
+            self.labeller.save()
+        print("Stopping Autosave thread")
 
 class SceneLabeler:
 
@@ -56,6 +71,9 @@ class SceneLabeler:
         self.data_shape = (1200, 1500)
         self.masks = {}  # populated on open
         self.layers = layers
+        self.running_mutex = threading.Lock()
+        self.running_mutex.acquire() # release this mutex when closing the application
+        self.autosave_thread = None
 
     def coarsen(self, da, aggregate):
         """
@@ -187,7 +205,9 @@ class SceneLabeler:
                     filename = layer["filename"]
                     path = os.path.join(self.scene_path, filename)
                     if os.path.exists(path):
-                        self.masks[layer_name] = xr.open_dataarray(path)
+                        da = xr.open_dataarray(path)
+                        self.masks[layer_name] = da
+                        da.close()
                     else:
                         self.masks[layer_name] = xr.DataArray(data=np.zeros(dtype=int, shape=self.data_shape),
                                 dims=self.data_dims, name=layer_name, attrs={"description":"mask for label: "+layer_name})
@@ -201,6 +221,8 @@ class SceneLabeler:
                 print("[Failed]")
                 logging.exception(f"Failed to add layer {layer_name}:{layer_type}")
 
+        self.autosave_thread = AutoSaveThread(self)
+        self.autosave_thread.start()
         napari.run()
 
     def save(self):
@@ -213,12 +235,17 @@ class SceneLabeler:
                 path = os.path.join(self.scene_path, filename)
                 print(f"Saving labels from {layer_name} to {path}... ", end="")
                 try:
-                    self.masks[layer_name].close()
                     self.masks[layer_name].to_netcdf(path)
                     print("[Done]")
                 except Exception as ex:
                     print("[Failed]")
                     logging.exception("Failed to write labels file")
+
+    def close(self):
+        self.running_mutex.release()
+        if self.autosave_thread:
+            self.autosave_thread.join()
+        self.save()
 
 
 def main():
@@ -242,7 +269,7 @@ def main():
         labeler.open() # exits when the user closes the napari window
     except Exception as ex:
         logging.exception("Error when opening napari")
-    labeler.save() # save labels back to file
+    labeler.close() # save labels back to file
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ Create a new folder and clone this repo into it
 ```
 mkdir napari_slstr_install
 cd napari_slstr_install
-git clone git@github.com:surftemp/napari-slstr.git
+git clone https://github.com/surftemp/napari-slstr.git
 ```
 
 Install napari-slstr `image_labeller` command, napari and other dependencies:
