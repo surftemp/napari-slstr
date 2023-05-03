@@ -28,31 +28,82 @@ import logging
 
 class Viewer:
 
-    def __init__(self, path, variables):
+    def __init__(self, path, variables, x_dim=None, y_dim=None):
         """
         Create a Viewer object to manage the loading of data into napari
 
         :param path: path to the scene
-        :param variables: a dictionary controlling which variables to display.
+        :param variables: a list of strings controlling which variables to display.
+        :param x_dim: the dimension to use along the x-dimension (prefix with - to flip)
+        :param y_dim: the dimension to use along the y-dimension (prefix with - to flip)
 
         """
         self.scene_path = path
         self.variables = variables
         self.viewer = napari.Viewer()
+        self.x_dim = x_dim
+        self.x_flip = False
+        self.y_dim = y_dim
+        self.y_flip = False
+
+        if self.x_dim and self.x_dim.startswith("-"):
+            self.x_dim = self.x_dim[1:]
+            self.x_flip = True
+
+        if self.y_dim and self.y_dim.startswith("-"):
+            self.y_dim = self.y_dim[1:]
+            self.y_flip = True
+
         self.layers = variables
         self.ds = xr.open_dataset(self.scene_path)
 
+    def __get_array(self,variable_name):
+        da = self.ds[variable_name].squeeze()
+        if len(da.shape) != 2:
+            raise ValueError(f"{variable_name} should not have more than two dimensions with size > 1")
+        # arrange the data so that the y-axis is the first dimension, x-axis is the second
+        if self.y_dim:
+            if self.x_dim:
+                da = da.transpose(self.y_dim, self.x_dim)
+            else:
+                da = da.transpose(self.y_dim, ...)
+        else:
+            if self.x_dim:
+                da = da.transpose(..., self.x_dim)
+        data = da.data
 
-    def add_image_layer(self, variable, name, cmap="viridis"):
+        # flip the x- or y-axis as instructed
+
+        if self.y_flip:
+            data = np.flipud(data)
+        if self.x_flip:
+            data = np.fliplr(data)
+        return data
+
+    def add_image_layer(self, variable):
         """
         Add a single channel as an image layer
-        :param variable: the name of the variable
+        :param variable: the variable name and optionally other information, notation name[:min:max[:colourmap]] or rgb(name:name:name)
         :param name: the name to give the layer in napari
-        :param cmap: the name of the napart colour map to use, eg magma, viridis
         """
-        da = self.ds[variable].squeeze()
-
-        self.viewer.add_image(np.flipud(da.data), name=name, colormap=cmap)
+        if variable.startswith("rgb("):
+            rgb_channels = variable[4:-1].split(":")
+            rgb_arrays = []
+            for channel in rgb_channels:
+                rgb_arrays.append(self.__get_array(channel))
+            data = np.stack(rgb_arrays,axis=-1)
+            self.viewer.add_image(data, name=variable, rgb=True)
+        else:
+            variable_parts = variable.split(":")
+            variable_name = variable_parts[0]
+            scale = None
+            cmap = "viridis"
+            if len(variable_parts) > 2:
+                scale = (float(variable_parts[1]),float(variable_parts[2]))
+            if len(variable_parts) > 3:
+                cmap = variable_parts[3]
+            data = self.__get_array(variable_name)
+            self.viewer.add_image(data, name=variable_name, colormap=cmap,contrast_limits=scale)
 
     def open(self):
         """
@@ -61,7 +112,7 @@ class Viewer:
         for variable in self.layers:
 
             print(f"Adding layer {variable}", end="")
-            self.add_image_layer(variable, variable)
+            self.add_image_layer(variable)
 
             print(f"[Done]")
 
@@ -73,7 +124,10 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("path", help="path to a netcdf file to display")
-    parser.add_argument("variables", help="Specify the variables to display as a comma separated list")
+    parser.add_argument("variables", help="Specify the variables to display as a comma separated list"+
+                        " where variables are specified using notation:  name[:min:max[:colourmap]]")
+    parser.add_argument("--x-dim", help="Specify the x-dimension to use (defaults to second dimension)")
+    parser.add_argument("--y-dim", help="Specify the y-dimension to use (defaults to first dimension)")
 
     logging.basicConfig(level=logging.INFO)
 
@@ -81,7 +135,7 @@ def main():
     filepath = args.path
     vars = args.variables.split(",")
 
-    viewer = Viewer(filepath, vars)
+    viewer = Viewer(filepath, vars, x_dim=args.x_dim, y_dim=args.y_dim)
 
     try:
         viewer.open() # exits when the user closes the napari window
