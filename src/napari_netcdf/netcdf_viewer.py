@@ -28,18 +28,18 @@ import logging
 
 class Viewer:
 
-    def __init__(self, path, variables, x_dim=None, y_dim=None):
+    def __init__(self, path, layers, x_dim=None, y_dim=None):
         """
         Create a Viewer object to manage the loading of data into napari
 
         :param path: path to the scene
-        :param variables: a list of strings controlling which variables to display.
+        :param layers: a list of strings controlling which layers to display.
         :param x_dim: the dimension to use along the x-dimension (prefix with - to flip)
         :param y_dim: the dimension to use along the y-dimension (prefix with - to flip)
 
         """
         self.scene_path = path
-        self.variables = variables
+        self.layers = layers
         self.viewer = napari.Viewer()
         self.x_dim = x_dim
         self.x_flip = False
@@ -54,7 +54,6 @@ class Viewer:
             self.y_dim = self.y_dim[1:]
             self.y_flip = True
 
-        self.layers = variables
         self.ds = xr.open_dataset(self.scene_path)
 
     def __get_array(self,variable_name):
@@ -80,21 +79,20 @@ class Viewer:
             data = np.fliplr(data)
         return data
 
-    def add_image_layer(self, variable):
+    def add_image_layer(self, layer):
         """
-        Add a single channel as an image layer
+        Add a single channel or rgb of 3 channels as an image layer
         :param variable: the variable name and optionally other information, notation name[:min:max[:colourmap]] or rgb(name:name:name)
-        :param name: the name to give the layer in napari
         """
-        if variable.startswith("rgb("):
-            rgb_channels = variable[4:-1].split(":")
+        if layer.startswith("rgb("):
+            rgb_channels = layer[4:-1].split(":")
             rgb_arrays = []
             for channel in rgb_channels:
                 rgb_arrays.append(self.__get_array(channel))
             data = np.stack(rgb_arrays,axis=-1)
-            self.viewer.add_image(data, name=variable, rgb=True)
+            self.viewer.add_image(data, name=layer, rgb=True)
         else:
-            variable_parts = variable.split(":")
+            variable_parts = layer.split(":")
             variable_name = variable_parts[0]
             scale = None
             cmap = "viridis"
@@ -109,14 +107,19 @@ class Viewer:
         """
         Open the SLSTR scene files and display in napari
         """
-        for variable in self.layers:
+        added_ok = 0
+        for layer in self.layers:
 
-            print(f"Adding layer {variable}", end="")
-            self.add_image_layer(variable)
+            print(f"Adding layer {layer}", end="")
+            try:
+                self.add_image_layer(layer)
+                print(f"[Done]")
+                added_ok += 1
+            except Exception as ex:
+                print(f"[Failed] {ex}")
 
-            print(f"[Done]")
-
-        napari.run()
+        if added_ok > 0:
+            napari.run()
 
 
 
