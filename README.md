@@ -11,7 +11,8 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 * conda or miniconda
 * git
-* On Mac, ensure you have XCode installed.
+* Napari
+  * On Mac, ensure you have XCode installed.
 
 ## Installation
 
@@ -21,6 +22,8 @@ Set up a conda environment with python 3.9
 conda create -y -n napari-env python=3.9
 conda activate napari-env
 ```
+
+Install napari in this environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
 
 Create a new folder and clone this repo into it
 
