@@ -44,7 +44,7 @@ class AutoSaveThread(threading.Thread):
     def __init__(self,labeller):
         super().__init__()
         self.labeller = labeller
-        self.interval_s = 300
+        self.interval_s = 3600
 
     def run(self):
         print(f"Starting Autosave thread, interval={self.interval_s} seconds")

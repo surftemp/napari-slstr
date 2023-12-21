@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import os.path
 
 import napari
 import xarray as xr
@@ -38,7 +38,12 @@ class Viewer:
         :param y_dim: the dimension to use along the y-dimension (prefix with - to flip)
 
         """
-        self.scene_path = path
+        if os.path.isfile(path):
+            self.scene_paths = [path]
+        else:
+            self.scene_paths = []
+            for fname in os.listdir(path):
+                self.scene_paths.append(os.path.join(path,fname))
         self.layers = layers
         self.viewer = napari.Viewer()
         self.x_dim = x_dim
@@ -54,10 +59,10 @@ class Viewer:
             self.y_dim = self.y_dim[1:]
             self.y_flip = True
 
-        self.ds = xr.open_dataset(self.scene_path)
 
-    def __get_array(self,variable_name):
-        da = self.ds[variable_name].squeeze()
+    def __get_array(self,variable_name, path):
+        ds = xr.open_dataset(path)
+        da = ds[variable_name].squeeze()
         if len(da.shape) != 2:
             raise ValueError(f"{variable_name} should not have more than two dimensions with size > 1")
         # arrange the data so that the y-axis is the first dimension, x-axis is the second
@@ -79,18 +84,21 @@ class Viewer:
             data = np.fliplr(data)
         return data
 
-    def add_image_layer(self, layer):
+    def add_image_layer(self, layer, path):
         """
         Add a single channel or rgb of 3 channels as an image layer
         :param variable: the variable name and optionally other information, notation name[:min:max[:colourmap]] or rgb(name:name:name)
         """
+        layer_name = layer
+        if len(self.scene_paths) > 1:
+            layer_name += ":"+os.path.split(path)[1]
         if layer.startswith("rgb("):
             rgb_channels = layer[4:-1].split(":")
             rgb_arrays = []
             for channel in rgb_channels:
-                rgb_arrays.append(self.__get_array(channel))
+                rgb_arrays.append(self.__get_array(channel,path))
             data = np.stack(rgb_arrays,axis=-1)
-            self.viewer.add_image(data, name=layer, rgb=True)
+            self.viewer.add_image(data, name=layer_name, rgb=True)
         else:
             variable_parts = layer.split(":")
             variable_name = variable_parts[0]
@@ -100,23 +108,25 @@ class Viewer:
                 scale = (float(variable_parts[1]),float(variable_parts[2]))
             if len(variable_parts) > 3:
                 cmap = variable_parts[3]
-            data = self.__get_array(variable_name)
-            self.viewer.add_image(data, name=variable_name, colormap=cmap,contrast_limits=scale)
+            data = self.__get_array(variable_name, path)
+            self.viewer.add_image(data, name=layer_name, colormap=cmap,contrast_limits=scale)
 
     def open(self):
         """
         Open the SLSTR scene files and display in napari
         """
         added_ok = 0
-        for layer in self.layers:
+        for path in self.scene_paths:
+            fname = os.path.split(path)[1]
+            for layer in self.layers:
 
-            print(f"Adding layer {layer}", end="")
-            try:
-                self.add_image_layer(layer)
-                print(f"[Done]")
-                added_ok += 1
-            except Exception as ex:
-                print(f"[Failed] {ex}")
+                print(f"Adding layer {layer}/{fname}", end="")
+                try:
+                    self.add_image_layer(layer, path)
+                    print(f"[Done]")
+                    added_ok += 1
+                except Exception as ex:
+                    print(f"[Failed] {ex}")
 
         if added_ok > 0:
             napari.run()

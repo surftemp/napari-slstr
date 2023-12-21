@@ -84,6 +84,10 @@ netcdf_viewer LC08_L1TP_205025_20230420_20230429_02_T1.nc rgb(B4:B3:B2),B11:275:
   * the second layer displays B11 using the coolwarm colour map between 275K and 295K
 * plot dimension nj on the y axis
 
+### Viewing multiple files
+
+if a folder instead of a netcdf4 file is specified, separate layers will be created for all of the .nc files in the folder
+
 ### Notes
 
 `--x-dim` and `--y-dim` specify the data dimensions to display on x and y axes.  Prefix with a minus sign to flip the axes.
