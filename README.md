@@ -33,7 +33,7 @@ cd napari_slstr_install
 git clone https://github.com/surftemp/napari-slstr.git
 ```
 
-Install napari-slstr `image_labeller` and `netcdf_viewer` commands, napari and other dependencies:
+Install napari-slstr `image_labeller` and `netcdf_viewer` commands, xarray and other dependencies:
 
 ```
 pip install -e .
