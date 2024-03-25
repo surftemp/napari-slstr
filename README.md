@@ -9,21 +9,27 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 ## Installation Prerequisites
 
-* conda or miniconda
+* conda or miniconda (recommended)
 * git
 * Napari
   * On Mac, ensure you have XCode installed.
 
 ## Installation
 
-Set up a conda environment with python 3.9
+### Installing napari and its dependencies
+
+Install napari version 0.4.18, preferably into a new conda environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
+
+Important Note - this software is not compatible with the latest version of napari, you must use napari 0.4.18 or earlier.  You can install a specific version of napari using the following example syntax `python -m pip install "napari[all]==0.4.18"`
+
+Check the version of napari that has been installed
 
 ```
-conda create -y -n napari-env python=3.9
-conda activate napari-env
+$ napari --version
+napari version 0.4.18
 ```
 
-Install napari in this environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
+### Installing image_labeller and netcdf_viewer
 
 Create a new folder and clone this repo into it
 
@@ -33,9 +39,10 @@ cd napari_slstr_install
 git clone https://github.com/surftemp/napari-slstr.git
 ```
 
-Install napari-slstr `image_labeller` and `netcdf_viewer` commands, xarray and other dependencies:
+Install napari-slstr `image_labeller` and `netcdf_viewer` commands from the repo:
 
 ```
+cd napari-slstr
 pip install -e .
 ```
 
@@ -67,8 +74,11 @@ In the `resources/example.cfg` configuration file, all channels are shown, with 
 image_labeller <path-to-SLSTR-scene-folder> ./resources/example.cfg
 ```
 
-When viewing an slstr-lite scene, use configuration file (or one based on) `resources/example_slstr_lite.cfg`
+When viewing an slstr-lite scene, use configuration file (or one based on) `./resources/example_slstr_lite.cfg`
 
+updated label files are written into the scene folder when the user closes Napari (select Exit from the File menu).
+
+It is recommended to periodically back up label files.
 
 ## Using netcdf_viewer
 

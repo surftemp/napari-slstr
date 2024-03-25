@@ -39,19 +39,6 @@ except ModuleNotFoundError:
 OBLIQUE_OFFSET_RADIANCE = 1096  # 0.5km/trackOffset/nadir=1996 - 0.5km/trackOffset/oblique=900
 OBLIQUE_OFFSET_BT = 548  # 1km/trackOffset/nadir=998 - 1km/trackOffset/oblique=450
 
-class AutoSaveThread(threading.Thread):
-
-    def __init__(self,labeller):
-        super().__init__()
-        self.labeller = labeller
-        self.interval_s = 3600
-
-    def run(self):
-        print(f"Starting Autosave thread, interval={self.interval_s} seconds")
-        while not self.labeller.running_mutex.acquire(timeout=self.interval_s):
-            print("Autosaving...")
-            self.labeller.save()
-        print("Stopping Autosave thread")
 
 class SceneLabeler:
 
@@ -71,9 +58,6 @@ class SceneLabeler:
         self.data_shape = (1200, 1500)
         self.masks = {}  # populated on open
         self.layers = layers
-        self.running_mutex = threading.Lock()
-        self.running_mutex.acquire() # release this mutex when closing the application
-        self.autosave_thread = None
 
     def coarsen(self, da, aggregate):
         """
@@ -221,8 +205,6 @@ class SceneLabeler:
                 print("[Failed]")
                 logging.exception(f"Failed to add layer {layer_name}:{layer_type}")
 
-        self.autosave_thread = AutoSaveThread(self)
-        self.autosave_thread.start()
         napari.run()
 
     def save(self):
@@ -242,9 +224,6 @@ class SceneLabeler:
                     logging.exception("Failed to write labels file")
 
     def close(self):
-        self.running_mutex.release()
-        if self.autosave_thread:
-            self.autosave_thread.join()
         self.save()
 
 
