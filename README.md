@@ -18,15 +18,15 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 ### Installing napari and its dependencies
 
-Install napari version 0.4.18, preferably into a new conda environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
+Install napari, preferably into a new conda environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
 
-Important Note - this software is not compatible with the latest version of napari, you must use napari 0.4.18 or earlier.  You can install a specific version of napari using the following example syntax `python -m pip install "napari[all]==0.4.18"`
+Important Note - this software has been tested with napari versions 0.4.18 and 0.5.3 on linux.  You can install a specific version of napari using the following example syntax `python -m pip install "napari[all]==0.4.18"`
 
 Check the version of napari that has been installed
 
 ```
 $ napari --version
-napari version 0.4.18
+napari version 0.5.3
 ```
 
 ### Installing image_labeller and netcdf_viewer
@@ -82,34 +82,43 @@ It is recommended to periodically back up label files.
 
 ## Using netcdf_viewer
 
-The netcdf_viewer tool uses command line options to control which variables are to be displayed, and how to display them.  For example:
+The netcdf_viewer tool uses command line options to control which files and variables are to be displayed, and how to display them.  For example:
 
 ```
-usage: netcdf_viewer.py [-h] [--x-dim X_DIM] [--y-dim Y_DIM] path layers
+netcdf_viewer.py [-h] [--x-dim X_DIM] [--y-dim Y_DIM] path layer [layer...] 
 ```
+
 ```
-netcdf_viewer LC08_L1TP_205025_20230420_20230429_02_T1.nc rgb(B4:B3:B2),B11:275:295:coolwarm --y-dim=nj
+netcdf_viewer LC08_L1TP_205025_20230420_20230429_02_T1.nc rgb(B4:B3:B2) B11:275:295:coolwarm --y-dim=nj
 ```
 
 * the netcdf file is `LC08_L1TP_205025_20230420_20230429_02_T1.nc`
-* the layers specify the display two layers:
+* two layers are requested:
   * the first layer is a rgb false colour composed from r=B4,g=B3,b=B2
   * the second layer displays B11 using the coolwarm colour map between 275K and 295K
-* plot dimension nj on the y axis
+* use dimension nj as the y axis
 
 ### Viewing multiple files
 
-if a folder instead of a netcdf4 file is specified, separate layers will be created for all of the .nc files in the folder
+Specify multiple paths and their layers using:
+
+```
+netcdf_viewer.py [-h] [--x-dim X_DIM] [--y-dim Y_DIM] path layer [layer...] path layer [layer...]
+```
 
 ### Notes
 
-`--x-dim` and `--y-dim` specify the data dimensions to display on x and y axes.  Prefix with a minus sign to flip the axes.
+`--x-dim` and `--y-dim` specify the data dimensions to display on x and y axes.  Prefix the dimension name with a minus sign to flip the axes.
 
-Variables are specified using the following (hopefully self-explanatory) notation:
+Layers are specified using the following (hopefully self-explanatory) notation:
 
 Use `rgb(r-var-name:g-var-name:b-var-name)` to specify 3 bands to compose a false colour layer
 
 or
 
-Use `var-name[:min-value:max-value[:colour-map]]` to plot a single band, with optional min/max and colour map
+Use `var-name[:min-value:max-value[:colour-map]]` to plot a single band, with optional min/max and colour map.  
+
+The following colour maps are available:
+
+"GrBu", "GrBu_d", "PiYG", "PuGr", "RdBu", "RdYeBuCy", "autumn", "blues", "cool", "coolwarm", "cubehelix", "diverging", "fire", "gist_earth", "gray", "gray_r", "grays", "greens", "hot", "hsl", "hsv", "husl", "ice", "inferno", "light_blues", "magma", "orange", "plasma", "reds", "single_hue", "spring", "summer", "turbo", "twilight", "twilight_shifted", "viridis", "winter"
 
