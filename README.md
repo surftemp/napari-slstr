@@ -18,15 +18,28 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 ### Installing napari and its dependencies
 
-Install napari, preferably into a new conda environment (see https://napari.org/stable/tutorials/fundamentals/installation.html for instructions for your platform)
+Install the napari python package, preferably into a new conda environment (see https://napari.org/stable/getting_started/installation.html#install-as-python-package for instructions for your platform)
 
-Important Note - this software has been tested with napari versions 0.4.18 and 0.5.3 on linux.  You can install a specific version of napari using the following example syntax `python -m pip install "napari[all]==0.4.18"`
-
-Check the version of napari that has been installed
+On linux (Ubuntu 24.04), the following installation process has been tested:
 
 ```
-$ napari --version
-napari version 0.5.3
+conda create -n napari-env python=3.12
+conda activate napari-env
+pip install napari[all]
+```
+
+Check the version of napari that has been installed (assuming your conda environment is called napari-env):
+
+```
+$ conda activate napari-env
+(napari-env) $ napari --version
+napari version 0.7.0
+```
+
+Check that the napari tool UI can open:
+
+```
+(napari-env) $ napari
 ```
 
 ### Installing image_labeller and netcdf_viewer

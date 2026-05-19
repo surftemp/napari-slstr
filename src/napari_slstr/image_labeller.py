@@ -196,7 +196,7 @@ class SceneLabeler:
                         self.masks[layer_name] = xr.DataArray(data=np.zeros(dtype=int, shape=self.data_shape),
                                 dims=self.data_dims, name=layer_name, attrs={"description":"mask for label: "+layer_name})
                     self.viewer.add_labels(self.masks[layer_name].data, name=layer_name + " (" + colour + ")",
-                                           num_colors=1, color={1: colour})
+                                           colormap={1: colour})
 
                 else:
                     raise ValueError(f"Unknown layer type {layer_type}")
