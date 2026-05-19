@@ -11,8 +11,6 @@ For more information on napari see: [https://napari.org/](https://napari.org/)
 
 * conda or miniconda (recommended)
 * git
-* Napari
-  * On Mac, ensure you have XCode installed.
 
 ## Installation
 
